@@ -12,20 +12,29 @@ namespace OfficeDevPnP.Core.AppModelExtensions
 {
     public static partial class ListItemExtensions
     {
+        /// <summary>
+        /// Converts a ListItem to OfficeDevPnP.Core.Framework.Provisioning.Model.DataRow 
+        /// </summary>
+        /// <param name="listItem">The listItem we are converting to a a field value list.</param>
         public static DataRow ToDataRow(this ListItem listItem)
         {
 
             return new DataRow(listItem.ToProvisioningValues());
         }
+        /// <summary>
+        /// Converts a ListItem to a Dictionary&lt;string,string&gt; used by the provisioning schema
+        /// </summary>
+        /// <param name="listItem">The listItem we are converting to a a field value list.</param>
+
         public static Dictionary<string, string> ToProvisioningValues(this ListItem listItem)
         {
             var list = listItem.ParentList;
             var fields = list.Fields;
             var web = list.ParentWeb;
             var resultList = new Dictionary<string, string>();
+            listItem.Context.Load(web);
             listItem.Context.Load(fields, fs => fs.IncludeWithDefaultProperties(f => f.TypeAsString, f => f.InternalName, f => f.Title));
             listItem.Context.ExecuteQueryRetry();
-
             var fieldValues = listItem.FieldValues;
 
             var fieldValuesAsText = listItem.EnsureProperty(li => li.FieldValuesAsText).FieldValues;
