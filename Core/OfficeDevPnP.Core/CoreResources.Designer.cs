@@ -442,6 +442,15 @@ namespace OfficeDevPnP.Core {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Content Type {0} does not exist in target list!.
+        /// </summary>
+        internal static string FileFolderExtensions_SetFileProperties_Error {
+            get {
+                return ResourceManager.GetString("FileFolderExtensions_SetFileProperties_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Update file &apos;{0}&apos;, change properties: {1}..
         /// </summary>
         internal static string FileFolderExtensions_UpdateFile0Properties1 {
@@ -926,6 +935,15 @@ namespace OfficeDevPnP.Core {
         internal static string Provisioning_Extensibility_Pipeline_Success {
             get {
                 return ResourceManager.GetString("Provisioning_Extensibility_Pipeline_Success", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Skipping web part localization because we&apos;re running under a user context who has a prefered language set in it&apos;s profile. This setup will not allow to add the needed localized string versions..
+        /// </summary>
+        internal static string Provisioning_Extensions_WebPartLocalization_Skip {
+            get {
+                return ResourceManager.GetString("Provisioning_Extensions_WebPartLocalization_Skip", resourceCulture);
             }
         }
         
@@ -1541,6 +1559,15 @@ namespace OfficeDevPnP.Core {
         internal static string Provisioning_ObjectHandlers_ListInstancesDataRows_Creating_list_item__0_ {
             get {
                 return ResourceManager.GetString("Provisioning_ObjectHandlers_ListInstancesDataRows_Creating_list_item__0_", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This row already exists and will be skipped because the IgnoreDuplicateDataRowErrors flag is set to true..
+        /// </summary>
+        internal static string Provisioning_ObjectHandlers_ListInstancesDataRows_Creating_listitem_duplicate {
+            get {
+                return ResourceManager.GetString("Provisioning_ObjectHandlers_ListInstancesDataRows_Creating_listitem_duplicate", resourceCulture);
             }
         }
         

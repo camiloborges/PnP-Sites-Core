@@ -1,12 +1,11 @@
 ﻿using Microsoft.SharePoint.Client;
+using Microsoft.SharePoint.Client.UserProfiles;
 using OfficeDevPnP.Core.Framework.Provisioning.Model;
 using OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers;
 using OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace OfficeDevPnP.Core.Tests.Framework.Functional.Validators
@@ -14,7 +13,7 @@ namespace OfficeDevPnP.Core.Tests.Framework.Functional.Validators
 #if !SP2013
     class LocalizationValidator : ValidatorBase
     {
-        private bool isNoScriptSite = false;
+        private readonly bool isNoScriptSite = false;
 
         #region construction
         public LocalizationValidator(Web web) : base()
@@ -24,10 +23,11 @@ namespace OfficeDevPnP.Core.Tests.Framework.Functional.Validators
             // XPathQuery = "/pnp:Templates/pnp:ProvisioningTemplate/pnp:ContentTypes/pnp:ContentType";
 
             isNoScriptSite = web.IsNoScriptSite();
+            cc = web.Context as ClientContext;
         }
         #endregion
 
-        public bool Validate(ProvisioningTemplate ptSource, ProvisioningTemplate ptTarget, TokenParser sParser, TokenParser tParser)
+        public bool Validate(ProvisioningTemplate ptSource, ProvisioningTemplate ptTarget, TokenParser sParser, TokenParser tParser, Web web)
         {
             bool isValid = false;
 
@@ -52,6 +52,14 @@ namespace OfficeDevPnP.Core.Tests.Framework.Functional.Validators
             if (!isValid) { return false; }
             #endregion
 
+            #region WebParts
+            if (CanUseAcceptLanguageHeaderForLocalization(web))
+            {
+                isValid = ValidateWebPartOnPages(ptSource, sParser);
+                if (!isValid) { return false; }
+            }
+            #endregion
+
 #if !ONPREMISES
             #region Custom Action
             if (!isNoScriptSite)
@@ -63,7 +71,63 @@ namespace OfficeDevPnP.Core.Tests.Framework.Functional.Validators
 #endif
             return isValid;
         }
-    
+
+        #region WebParts
+        private bool CanUseAcceptLanguageHeaderForLocalization(Web web)
+        {
+            if (web.Context.IsAppOnly())
+            {
+                return true;
+            }
+
+            var currentUser = web.EnsureProperty(w => w.CurrentUser);
+            PeopleManager peopleManager = new PeopleManager(web.Context);
+            var languageSettings = peopleManager.GetUserProfilePropertyFor(web.CurrentUser.LoginName, "SPS-MUILanguages");
+            web.Context.ExecuteQueryRetry();
+
+            if (languageSettings == null || String.IsNullOrEmpty(languageSettings.Value))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool ValidateWebPartOnPages(ProvisioningTemplate template, TokenParser parser)
+        {
+            var web = cc.Web;
+            var file = template.Files.First();
+            var folderName = parser.ParseString(file.Folder);
+            var url = folderName + "/" + template.Connector.GetFilenamePart(file.Src);
+            var resourceValues = parser.GetResourceTokenResourceValues(file.WebParts.First().Title);
+            var ok = ValidatePartOnPage(parser, resourceValues, web, url);
+            if (!ok) return false;
+
+            var page = template.Pages.First();
+            url = parser.ParseString(page.Url);
+            resourceValues = parser.GetResourceTokenResourceValues(file.WebParts.First().Title);
+            ok = ValidatePartOnPage(parser, resourceValues, web, url);
+            return ok;
+        }
+
+        private bool ValidatePartOnPage(TokenParser parser, IEnumerable<Tuple<string, string>> resourceValues, Web web, string url)
+        {
+            bool allOk = true;
+            foreach (var resourceValue in resourceValues)
+            {
+                var webPartDef = web.GetWebParts(parser.ParseString(url)).First();
+                webPartDef.Context.PendingRequest.RequestExecutor.WebRequest.Headers["Accept-Language"] = resourceValue.Item1;
+                webPartDef.EnsureProperties(p => p.WebPart, p => p.WebPart.Properties);
+                if (!webPartDef.WebPart.Properties["Title"].Equals(resourceValue.Item2))
+                {
+                    allOk = false;
+                }
+            }
+            web.Context.PendingRequest.RequestExecutor.WebRequest.Headers.Remove("Accept-Language");
+            return allOk;
+        }
+        #endregion
+
         #region SiteFields
         public bool ValidateSiteFields(Core.Framework.Provisioning.Model.FieldCollection sElements, Core.Framework.Provisioning.Model.FieldCollection tElements, TokenParser sParser, TokenParser tParser)
         {
@@ -125,7 +189,7 @@ namespace OfficeDevPnP.Core.Tests.Framework.Functional.Validators
             foreach (Core.Framework.Provisioning.Model.ContentType item in coll)
             {
                 loc.Add(new Localization(item.Id, item.Name, item.Description));
-            }           
+            }
 
             return loc;
         }
@@ -191,10 +255,11 @@ namespace OfficeDevPnP.Core.Tests.Framework.Functional.Validators
             }
 
             return locCustomActions;
-        }     
+        }
         #endregion
 
-        public class Localization {
+        public class Localization
+        {
             public Localization(string key, string title, string description)
             {
                 Key = key;

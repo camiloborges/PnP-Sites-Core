@@ -33,7 +33,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                 {
                     var rootWeb = (web.Context as ClientContext).Site.RootWeb;
 
-                    web.EnsureProperties(w => w.ServerRelativeUrl);
+                    web.EnsureProperties(w => w.ServerRelativeUrl, w => w.SupportedUILanguageIds);
 
                     web.Context.Load(web.Lists, lc => lc.IncludeWithDefaultProperties(l => l.RootFolder.ServerRelativeUrl));
                     web.Context.ExecuteQueryRetry();
@@ -81,9 +81,20 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                                 parser = returnTuple.Item2;
                                 processedLists.Add(new ListInfo { SiteList = createdList, TemplateList = templateList });
 
-                                parser.AddToken(new ListIdToken(web, templateList.Title, createdList.Id));
+                                parser.AddToken(new ListIdToken(web, createdList.Title, createdList.Id));
 
-                                parser.AddToken(new ListUrlToken(web, templateList.Title, createdList.RootFolder.ServerRelativeUrl.Substring(web.ServerRelativeUrl.Length + 1)));
+#if !SP2013
+                                foreach (var supportedlanguageId in web.SupportedUILanguageIds)
+                                {
+                                    var ci = new System.Globalization.CultureInfo(supportedlanguageId);
+                                    var titleResource = createdList.TitleResource.GetValueForUICulture(ci.Name);
+                                    createdList.Context.ExecuteQueryRetry();
+
+                                    if (titleResource != null && titleResource.Value != null)
+                                        parser.AddToken(new ListIdToken(web, titleResource.Value, createdList.Id));
+                                }
+#endif
+                                parser.AddToken(new ListUrlToken(web, createdList.Title, createdList.RootFolder.ServerRelativeUrl.Substring(web.ServerRelativeUrl.Length + 1)));
                             }
                             catch (Exception ex)
                             {
@@ -113,9 +124,9 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                         }
                     }
 
-                    #endregion
+#endregion
 
-                    #region FieldRefs
+#region FieldRefs
 
                     foreach (var listInfo in processedLists)
                     {
@@ -125,7 +136,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
 
                             foreach (var fieldRef in listInfo.TemplateList.FieldRefs)
                             {
-                                var field = rootWeb.GetFieldById<Field>(fieldRef.Id);
+                                var field = rootWeb.GetFieldById(fieldRef.Id);
                                 if (field == null)
                                 {
                                     // log missing referenced field
@@ -186,9 +197,9 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                         }
                     }
 
-                    #endregion
+#endregion
 
-                    #region Fields
+#region Fields
 
                     foreach (var listInfo in processedLists)
                     {
@@ -259,9 +270,9 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                         web.Context.ExecuteQueryRetry();
                     }
 
-                    #endregion
+#endregion
 
-                    #region Default Field Values
+#region Default Field Values
                     foreach (var listInfo in processedLists)
                     {
                         if (listInfo.TemplateList.FieldDefaults.Any())
@@ -275,9 +286,9 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                             }
                         }
                     }
-                    #endregion
+#endregion
 
-                    #region Views
+#region Views
 
                     foreach (var listInfo in processedLists)
                     {
@@ -299,7 +310,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                         foreach (var view in list.Views)
                         {
 
-                            CreateView(web, view, existingViews, createdList, scope);
+                            CreateView(web, view, existingViews, createdList, scope, parser);
 
                         }
 
@@ -314,9 +325,9 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                         //}
                     }
 
-                    #endregion
+#endregion
 
-                    #region Folders
+#region Folders
 
                     // Folders are supported for document libraries and generic lists only
                     foreach (var list in processedLists)
@@ -338,7 +349,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                         }
                     }
 
-                    #endregion
+#endregion
 
                     // If an existing view is updated, and the list is to be listed on the QuickLaunch, it is removed because the existing view will be deleted and recreated from scratch. 
                     foreach (var listInfo in processedLists)
@@ -353,7 +364,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
             return parser;
         }
 
-        private void CreateView(Web web, View view, Microsoft.SharePoint.Client.ViewCollection existingViews, List createdList, PnPMonitoredScope monitoredScope)
+        private void CreateView(Web web, View view, Microsoft.SharePoint.Client.ViewCollection existingViews, List createdList, PnPMonitoredScope monitoredScope, TokenParser parser)
         {
             try
             {
@@ -364,17 +375,16 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                 {
                     throw new ApplicationException("Invalid View element, missing a valid value for the attribute DisplayName.");
                 }
-
                 monitoredScope.LogDebug(CoreResources.Provisioning_ObjectHandlers_ListInstances_Creating_view__0_, displayNameElement.Value);
-                var existingView = existingViews.FirstOrDefault(v => v.Title == displayNameElement.Value);
 
+
+                var viewTitle = parser.ParseString(displayNameElement.Value);
+                var existingView = existingViews.FirstOrDefault(v => v.Title == viewTitle);
                 if (existingView != null)
                 {
                     existingView.DeleteObject();
                     web.Context.ExecuteQueryRetry();
                 }
-
-                var viewTitle = displayNameElement.Value;
 
                 // Type
                 var viewTypeString = viewElement.Attribute("Type") != null ? viewElement.Attribute("Type").Value : "None";
@@ -555,6 +565,15 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
 
             element.SetAttributeValue("AllowDeletion", "TRUE");
 
+            var calculatedField = field as FieldCalculated;
+            if(calculatedField != null)
+            {
+                if (element.Element("Formula") != null)
+                {
+                    element.Element("Formula").Value = calculatedField.Formula;
+                }
+            }
+
             field.SchemaXml = element.ToString();
 
             var createdField = listInfo.SiteList.Fields.Add(field);
@@ -675,6 +694,15 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                                 existingFieldElement.Element(element.Name).Remove();
                             }
                             existingFieldElement.Add(element);
+                        }
+
+                        if (string.Equals(templateFieldElement.Attribute("Type").Value, "Calculated", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var fieldRefsElement = existingFieldElement.Descendants("FieldRefs").FirstOrDefault();
+                            if (fieldRefsElement != null)
+                            {
+                                fieldRefsElement.Remove();
+                            }
                         }
 
                         if (existingFieldElement.Attribute("Version") != null)
@@ -948,7 +976,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                     isDirty = false;
                 }
 
-                #region UserCustomActions
+#region UserCustomActions
                 if (!isNoScriptSite)
                 {
                     // Add any UserCustomActions
@@ -1003,7 +1031,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                 {
                     scope.LogWarning(CoreResources.Provisioning_ObjectHandlers_ListInstances_SkipAddingOrUpdatingCustomActions);
                 }
-                #endregion
+#endregion
 
                 if (existingList.ContentTypesEnabled)
                 {
@@ -1730,7 +1758,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
 
                     if (fieldElement.Attribute("Type").Value == "Calculated")
                     {
-                        schemaXml = TokenizeFieldFormula(schemaXml);
+                        schemaXml = ObjectField.TokenizeFieldFormula(siteList.Fields, (FieldCalculated)field, schemaXml);
                     }
 
                     if (creationInfo.PersistMultiLanguageResources)
