@@ -17,6 +17,7 @@ using System.IO;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core.Framework.Provisioning.Connectors;
 using OfficeDevPnP.Core.Utilities;
+using OfficeDevPnP.Core.AppModelExtensions;
 
 namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
 {
@@ -238,7 +239,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
             // Persist file using connector
             if (creationInfo.PersistBrandingFiles)
             {
-                PersistFile(web, creationInfo, scope, folderPath, fileName);
+               creationInfo.PersistFile(folderPath, fileName, web, scope);
             }
             return template;
         }

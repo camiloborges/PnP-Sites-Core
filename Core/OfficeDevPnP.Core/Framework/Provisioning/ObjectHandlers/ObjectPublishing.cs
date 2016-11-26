@@ -13,6 +13,7 @@ using OfficeDevPnP.Core.Framework.Provisioning.Providers;
 using OfficeDevPnP.Core.Framework.Provisioning.Providers.Xml;
 using System.Web;
 using OfficeDevPnP.Core.Utilities;
+using OfficeDevPnP.Core.AppModelExtensions;
 
 namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
 {
@@ -139,7 +140,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                                 // Persist file using connector, if needed
                                 if (creationInfo.PersistPublishingFiles)
                                 {
-                                    PersistFile(web, creationInfo, scope, folderPath, fileName, true);
+                                    creationInfo.PersistFile(folderPath, fileName, web, scope,true);
                                 }
 
                                 if (listItem.ContentType.StringId.StartsWith(MASTER_PAGE_CONTENT_TYPE_ID))
@@ -331,8 +332,8 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                 {
                     web.SetAvailableWebTemplates(availableWebTemplates);
                 }
-				
-				if (template.Publishing.DesignPackage != null)
+                
+                if (template.Publishing.DesignPackage != null)
                 {
                     var package = template.Publishing.DesignPackage;
 
@@ -348,7 +349,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                     scope.LogDebug("Installing design package");
                     site.InstallSolution(package.PackageGuid, tempFileName, package.MajorVersion, package.MinorVersion);
                     System.IO.File.Delete(tempFileName);
-	            }
+                }
                 // Set allowed page layouts
                 var availablePageLayouts = template.Publishing.PageLayouts.Select(p => p.Path);
                 if (availablePageLayouts.Any())

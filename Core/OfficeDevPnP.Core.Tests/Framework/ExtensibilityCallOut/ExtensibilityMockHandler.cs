@@ -16,8 +16,7 @@ namespace OfficeDevPnP.Core.Tests.Framework.ExtensibilityCallOut
     {
         public ProvisioningTemplate Extract(ClientContext ctx, ProvisioningTemplate template, ProvisioningTemplateCreationInformation creationInformation, PnPMonitoredScope scope, string configurationData)
         {
-            template.Lists.Add(new ListInstance() { Title = "Test List" });
-
+            template.Lists.Add(new ListInstance() { Title = "Test List" });            
             return template;
         }
 

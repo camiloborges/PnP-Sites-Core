@@ -13,6 +13,7 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using System.Collections;
 using OfficeDevPnP.Core.Utilities;
+using OfficeDevPnP.Core.AppModelExtensions;
 
 namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
 {
@@ -164,7 +165,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
             template.Files.Add(formFile);
 
             // Persist file using connector
-            PersistFile(web, creationInfo, scope, folderPath, fileName);
+            creationInfo.PersistFile(folderPath, fileName, web, scope);
         }
 
         public override TokenParser ProvisionObjects(Web web, ProvisioningTemplate template, TokenParser parser, ProvisioningTemplateApplyingInformation applyingInformation)
