@@ -314,6 +314,7 @@
     <Compile Include="AppModelExtensions\FeatureExtensionsTests.cs" />
     <Compile Include="AppModelExtensions\FieldAndContentTypeExtensionsTests.cs" />
     <Compile Include="AppModelExtensions\JavaScriptExtensionsTests.cs" />
+    <Compile Include="AppModelExtensions\ListItemExtensionsTests.cs" />
     <Compile Include="AppModelExtensions\ListExtensionsTests.cs" />
     <Compile Include="AppModelExtensions\ListRatingExtensionTest.cs" />
     <Compile Include="AppModelExtensions\FileChangeTrackingTests.cs" />
@@ -328,6 +329,7 @@
     <Compile Include="Authentication\AuthenticationTests.cs" />
     <Compile Include="Diagnostics\LogTests.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
+    <Compile Include="Extensions\StringExtensionsTets.cs" />
     <Compile Include="Framework\Connectors\ConnectorAzureTests.cs" />
     <Compile Include="Framework\Connectors\ConnectorFileSystemTests.cs" />
     <Compile Include="Framework\Connectors\ConnectorOpenXmlTests.cs" />

@@ -12,6 +12,7 @@ namespace OfficeDevPnP.Core.AppModelExtensions
 {
     public static partial class ListItemExtensions
     {
+
         /// <summary>
         /// Converts a ListItem to OfficeDevPnP.Core.Framework.Provisioning.Model.DataRow 
         /// </summary>
@@ -31,6 +32,7 @@ namespace OfficeDevPnP.Core.AppModelExtensions
             var list = listItem.ParentList;
             var fields = list.Fields;
             var web = list.ParentWeb;
+
             var resultList = new Dictionary<string, string>();
             listItem.Context.Load(web);
             listItem.Context.Load(fields, fs => fs.IncludeWithDefaultProperties(f => f.TypeAsString, f => f.InternalName, f => f.Title));
@@ -106,7 +108,19 @@ namespace OfficeDevPnP.Core.AppModelExtensions
                     switch (field.TypeAsString)
                     {
                         case "URL":
-                            value = fieldValuesAsText[fieldValue.Key].TokenizeUrl(web.Url, web);
+                            //need to break down in two parts, tokenize, group again.
+
+                            var urlArray = fieldValuesAsText[fieldValue.Key].Split(',');
+                            var linkValue = new FieldUrlValue();
+                            linkValue.Url = urlArray[0].TokenizeUrl(web.Url);
+                            if (urlArray.Length == 2)
+                            {
+                                linkValue.Description= urlArray[1].Trim().TokenizeUrl(web.Url);
+                            }else{
+                                linkValue.Description = urlArray[0].Trim().TokenizeUrl(web.Url);
+                            }
+                            
+                            value = String.Format("{0}, {1}", linkValue.Url, linkValue.Description);
                             break;
                         case "User":
                             var userFieldValue = fieldValue.Value as Microsoft.SharePoint.Client.FieldUserValue;
@@ -139,6 +153,10 @@ namespace OfficeDevPnP.Core.AppModelExtensions
                             {
                                 value = JsonUtility.Serialize(taxonomyMultiFieldValue).TokenizeUrl(web.Url);
                             }
+                            break;
+                        case "Note":
+                        case "HTML":
+                            value = fieldValue.Value.ToString().TokenizeHtml(web.Url, web);
                             break;
                         case "ContentTypeIdFieldType":
                         default:

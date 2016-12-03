@@ -58,8 +58,8 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
             _tokens.Add(new ThemeCatalogToken(web));
             _tokens.Add(new SiteNameToken(web));
             _tokens.Add(new SiteIdToken(web));
-			_tokens.Add(new SiteOwnerToken(web));
-			_tokens.Add(new AssociatedGroupToken(web, AssociatedGroupToken.AssociatedGroupType.owners));
+            _tokens.Add(new SiteOwnerToken(web));
+            _tokens.Add(new AssociatedGroupToken(web, AssociatedGroupToken.AssociatedGroupType.owners));
             _tokens.Add(new AssociatedGroupToken(web, AssociatedGroupToken.AssociatedGroupType.members));
             _tokens.Add(new AssociatedGroupToken(web, AssociatedGroupToken.AssociatedGroupType.visitors));
             _tokens.Add(new GuidToken(web));
@@ -68,6 +68,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
             _tokens.Add(new CurrentUserLoginNameToken(web));
             _tokens.Add(new CurrentUserFullNameToken(web));
             _tokens.Add(new AuthenticationRealmToken(web));
+            _tokens.Add(new HostUrlToken(web));
 
             // Add lists
             web.Context.Load(web.Lists, ls => ls.Include(l => l.Id, l => l.Title, l => l.RootFolder.ServerRelativeUrl));
