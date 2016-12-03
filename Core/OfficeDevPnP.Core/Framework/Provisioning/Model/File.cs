@@ -49,7 +49,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.Model
         public Dictionary<string, string> Properties
         {
             get { return _properties; }
-            private set { _properties = value; }
+            set { _properties = value; }
         }
 
         /// <summary>
