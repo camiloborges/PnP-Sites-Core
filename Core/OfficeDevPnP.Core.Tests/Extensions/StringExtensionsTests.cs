@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace OfficeDevPnP.Core.Tests.Extensions
 {
     [TestClass()]
-    class StringExtensionsTests
+    public class StringExtensionsTests
     {
         [TestMethod]
         public void TokenizeHtmlWithRelativeAndAbsolutePaths()
@@ -35,18 +35,7 @@ namespace OfficeDevPnP.Core.Tests.Extensions
 
         }
 
-        [TestMethod]
-        public void TokenizeHtmlSingleLineContent()
-        {
-            var htmlContent = "https://contoso.sharepoint.com/";
-            var webUrl = "https://contoso.sharepoint.com/";
-            var expectedResult = "{hosturl}{site}";
-            var result = htmlContent.TokenizeHtml(webUrl);
-            Assert.AreEqual(expectedResult, result);
-
-
-        }
-
+      
         [TestMethod]
         public void TokenizeUrlAbsoluteUrlTest()
         {
@@ -64,7 +53,7 @@ namespace OfficeDevPnP.Core.Tests.Extensions
             var itemUrl = "https://contoso.sharepoint.com/pages/home.aspx";
             var webUrl = "https://contoso.sharepoint.com/";
             var expectedResult = "{hosturl}{site}pages/home.aspx";
-            var result = itemUrl.TokenizeHtml(webUrl);
+            var result = itemUrl.TokenizeUrl(webUrl);
             Assert.AreEqual(expectedResult, result);
 
         }

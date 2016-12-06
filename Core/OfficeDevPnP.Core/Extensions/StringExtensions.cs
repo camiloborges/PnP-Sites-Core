@@ -20,28 +20,32 @@ namespace OfficeDevPnP.Core.Extensions
         public static string TokenizeHtml(this string htmlBody, string webUrl, Web web=null)
         {
 
-            String result = htmlBody.TokenizeUrl(webUrl, web);
+            String result = htmlBody;//w.TokenizeUrl(webUrl, web);
+            var webUrlPath = webUrl;
             var hostUrl = "";
             Uri webUrlUri;
             if (Uri.TryCreate(webUrl, UriKind.Absolute, out webUrlUri))
-                hostUrl = webUrlUri.AbsoluteUri;
+            {
+                hostUrl = webUrlUri.AbsoluteUri.TrimEnd('/');
+                webUrlPath = webUrlUri.PathAndQuery;
+            }
             if (String.IsNullOrEmpty(webUrl))
             {
                 return htmlBody;
             }
-            if (webUrl == "/")
+            if (webUrlPath == "/")
             {
-                result = Regex.Replace(htmlBody, "<(.*?)(src|href)=\"/(.*?)\"(.*?)>", String.Format("<$1$2=\"{0}$3\"$4>", "{site}"),
+                result = Regex.Replace(result, "<(.*?)(src|href)=\"/(.*?)\"(.*?)>", String.Format("<$1$2=\"{0}$3\"$4>", "{site}"),
                                               RegexOptions.IgnoreCase & RegexOptions.Multiline);
             }
             else
             {
-                result = Regex.Replace(htmlBody, String.Format("<(.*?)(src|href)=\"{0}(.*?)\"(.*?)>", webUrl), String.Format("<$1$2=\"{0}$3\"$4>", "{site}"),
+                result = Regex.Replace(result, String.Format("<(.*?)(src|href)=\"{0}/(.*?)\"(.*?)>", webUrl), String.Format("<$1$2=\"{0}$3\"$4>", "{hosturl}{site}"),
                                              RegexOptions.IgnoreCase & RegexOptions.Multiline);
             }
             if (!String.IsNullOrEmpty(hostUrl))
             {
-                result = Regex.Replace(result, String.Format("<(.*?)(src|href)=\"{0}{1}(.*?)\"(.*?)>", hostUrl, webUrl), String.Format("<$1$2=\"{0}$3\"$4>", "{hosturl}{site}"),
+                result = Regex.Replace(result, String.Format("<(.*?)(src|href)=\"{0}{1}/(.*?)\"(.*?)>", hostUrl, webUrlPath), String.Format("<$1$2=\"{0}$3\"$4>", "{hosturl}{site}"),
                                              RegexOptions.IgnoreCase & RegexOptions.Multiline);
             }
             return result;
@@ -120,13 +124,13 @@ namespace OfficeDevPnP.Core.Extensions
                         if (Uri.TryCreate(url, UriKind.Absolute, out urlUri))
                         {
                             result = (webUrlUri.PathAndQuery.Equals("/") && url.StartsWith(webUrlUri.AbsoluteUri))
-                            ? "{hosturl}{site}" + urlUri.PathAndQuery // we need this for DocumentTemplate attribute of pnp:ListInstance also on a root site ("/") without managed path
-                            : String.Format("{hosturl}{0}", urlUri.PathAndQuery.Replace(webUrlPathAndQuery, "{site}"));
+                            ? "{hosturl}{site}" + urlUri.PathAndQuery.TrimStart('/') // we need this for DocumentTemplate attribute of pnp:ListInstance also on a root site ("/") without managed path
+                            : String.Format("{0}{1}", "{hosturl}", urlUri.PathAndQuery.Replace((webUrlPathAndQuery), "{site}"));
                         }
                         else
                         {
                             result = (webUrlUri.PathAndQuery.Equals("/") && url.StartsWith(webUrlUri.PathAndQuery))
-                            ? "{site}" + url // we need this for DocumentTemplate attribute of pnp:ListInstance also on a root site ("/") without managed path
+                            ? "{site}" + url.TrimStart('/') // we need this for DocumentTemplate attribute of pnp:ListInstance also on a root site ("/") without managed path
                             : url.Replace(webUrlPathAndQuery, "{site}");
                         }
                     }
